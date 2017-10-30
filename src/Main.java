@@ -5,6 +5,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import javax.sound.midi.Instrument;
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Soundbank;
+import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -22,7 +28,10 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 /*
  * TODO:
- * 		- Change from Clip to Midi for morse code output
+ * 		- Figure out what's up with the MIDI reverb
+ * 			Options:
+ * 			1) Open and close synthesizer with every note (takes a bit longer and is probably bad practice)
+ * 			2) FIGURE SOMETHING ELSE OUT???
  * 		- Create input from microphone <- This will take a while
  * 		- Don't hard code EVERYTHING
  */
@@ -34,6 +43,8 @@ public class Main
 	final static int SPACE_BETWEEN_LETTERS = 200; // .2 seconds
 	
 	public static  HashMap<Character, String> morseDictionary; // Morse Code Dictionary
+
+	public static Synthesizer synth;
 	
 	public static void main(String[] args)
 	{
@@ -43,9 +54,11 @@ public class Main
 		String morse = convertToMorse(in);
 		System.out.println(morse);
 		playMorse(morse);
+
+        synth.close(); // Close the synthesizer
 	}
 	
-	// Populates the morseDictionary
+	// Populates the morseDictionary and sets up synthesizer
 	public static void programInitialize()
 	{
 		morseDictionary = new HashMap<Character, String>();
@@ -68,6 +81,14 @@ public class Main
 			System.out.println("Error: Dictionary not found. Exiting Program...");
 			System.exit(0);
 		}
+		
+		// Set up synthesizer
+		try
+		{
+			synth = MidiSystem.getSynthesizer();
+		    synth.open();
+		}
+		catch (MidiUnavailableException e) { e.printStackTrace(); }
 	}
 	
 	// Simple user input
@@ -118,9 +139,9 @@ public class Main
 					char temp = letter.charAt(i);
 					// Determines whether the char is a short or long beep
 					if(temp == '.')
-						playSound(true);
+						playSound(100);
 					else if(temp == '-')
-						playSound(false);
+						playSound(300);
 				}
 			}
 			try { Thread.sleep(SPACE_BETWEEN_LETTERS); } // Pause for next letter
@@ -131,8 +152,25 @@ public class Main
 	
 	// Plays a note
 	// Code from https://www.youtube.com/watch?v=nUKya2DvYSo
-	public static void playSound(boolean shortLength)
+	public static void playSound(int noteLength)
 	{
+		try
+		{
+//			synth.open();
+			MidiChannel[] mc = synth.getChannels(); // Creates the synthesizer
+	        mc[0].programChange(6); // Sets the instrument
+	        
+	        // Plays the note
+	        mc[0].noteOn(90, 150);
+	        Thread.sleep(noteLength);
+	        mc[0].noteOff(90, 600);
+//	        synth.close(); // Close the synthesizer
+		}
+		catch (InterruptedException e) { e.printStackTrace(); }
+//		catch (MidiUnavailableException e) { e.printStackTrace(); }
+		
+		
+		/*
 		Mixer.Info[] mixInfos = AudioSystem.getMixerInfo();
 		
 		Mixer mixer = AudioSystem.getMixer(mixInfos[0]);
@@ -169,5 +207,6 @@ public class Main
 			try { Thread.sleep(50); }
 			catch(InterruptedException ie) { ie.printStackTrace(); }
 		} while(clip.isActive());
+		*/
 	}
 }
