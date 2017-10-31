@@ -11,12 +11,15 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
+import javax.sound.sampled.ReverbType;
+import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 /*
@@ -28,10 +31,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 /*
  * TODO:
- * 		- Figure out what's up with the MIDI reverb
- * 			Options:
- * 			1) Open and close synthesizer with every note (takes a bit longer and is probably bad practice)
- * 			2) FIGURE SOMETHING ELSE OUT???
  * 		- Create input from microphone <- This will take a while
  * 		- Don't hard code EVERYTHING
  */
@@ -39,12 +38,17 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class Main
 {
 	// For morse code speaker
-	final static int SPACE_BETWEEN_WORDS = 300; // .3 seconds
-	final static int SPACE_BETWEEN_LETTERS = 200; // .2 seconds
+	final static int DOT_LENGTH = 100; // .1 second
+	final static int DASH_LENGTH = 3 * DOT_LENGTH; // .3 seconds
+	final static int SPACE_BETWEEN_ELEM = DOT_LENGTH; // .1 second
+	final static int SPACE_BETWEEN_LETTERS = 3 * DOT_LENGTH; // .3 seconds
+	final static int SPACE_BETWEEN_WORDS = 7 * DOT_LENGTH; // .7 seconds
 	
 	public static  HashMap<Character, String> morseDictionary; // Morse Code Dictionary
 
 	public static Synthesizer synth;
+	
+	private static Tone[] tones;
 	
 	public static void main(String[] args)
 	{
@@ -55,7 +59,7 @@ public class Main
 		System.out.println(morse);
 		playMorse(morse);
 
-        synth.close(); // Close the synthesizer
+//        synth.close(); // Close the synthesizer
 	}
 	
 	// Populates the morseDictionary and sets up synthesizer
@@ -82,6 +86,7 @@ public class Main
 			System.exit(0);
 		}
 		
+		/*
 		// Set up synthesizer
 		try
 		{
@@ -89,6 +94,13 @@ public class Main
 		    synth.open();
 		}
 		catch (MidiUnavailableException e) { e.printStackTrace(); }
+		*/
+		
+		System.out.println("Creating tones");
+		tones = new Tone[2];
+		tones[0] = new Tone(DOT_LENGTH);
+		tones[1] = new Tone(DASH_LENGTH);
+		System.out.println("Finished creating tones");
 	}
 	
 	// Simple user input
@@ -122,6 +134,16 @@ public class Main
 	// Converts the morse code to sound
 	public static void playMorse(String input)
 	{
+		final AudioFormat af = new AudioFormat(Tone.SAMPLE_RATE, 8, 1, true, true); // AudioFormat
+        SourceDataLine line = null; // Create the Data Line
+		try
+		{
+			line = AudioSystem.getSourceDataLine(af);
+	        line.open(af, Tone.SAMPLE_RATE); // Open the data line
+		}
+		catch (LineUnavailableException e) { e.printStackTrace(); }
+        line.start(); // Start the line
+		
 		Scanner chopper = new Scanner(input); // Go through the input
 		String letter; // Each morse code letter
 		while(chopper.hasNext())
@@ -139,9 +161,11 @@ public class Main
 					char temp = letter.charAt(i);
 					// Determines whether the char is a short or long beep
 					if(temp == '.')
-						playSound(100);
+						playSound(true, line);
 					else if(temp == '-')
-						playSound(300);
+						playSound(false, line);
+					try { Thread.sleep(SPACE_BETWEEN_ELEM); } // Pause for next element
+					catch (InterruptedException e) { e.printStackTrace(); }
 				}
 			}
 			try { Thread.sleep(SPACE_BETWEEN_LETTERS); } // Pause for next letter
@@ -151,9 +175,25 @@ public class Main
 	}
 	
 	// Plays a note
-	// Code from https://www.youtube.com/watch?v=nUKya2DvYSo
-	public static void playSound(int noteLength)
+	// Code influenced by https://stackoverflow.com/questions/2064066/does-java-have-built-in-libraries-for-audio-synthesis/2065693#2065693
+	public static void playSound(boolean shortLength, SourceDataLine line)
 	{
+    	Tone t; // Tone to be played (short or long)
+    	if(shortLength)
+    		t = tones[0];
+    	else
+    		t = tones[1];
+    	line.write(t.data(), 0, Tone.SAMPLE_RATE * t.getLength() / 1000); // Writes the data
+        try { Thread.sleep(t.getLength()); } // Sleep for the length of the tone
+        catch (InterruptedException e) { e.printStackTrace(); }
+    	
+        line.drain(); // Drain the line
+		
+		
+		
+		
+		
+		/*
 		try
 		{
 //			synth.open();
@@ -168,6 +208,10 @@ public class Main
 		}
 		catch (InterruptedException e) { e.printStackTrace(); }
 //		catch (MidiUnavailableException e) { e.printStackTrace(); }
+		*/
+		
+		
+		
 		
 		
 		/*
