@@ -1,26 +1,12 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import javax.sound.midi.Instrument;
-import javax.sound.midi.MidiChannel;
-import javax.sound.midi.MidiSystem;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.Soundbank;
-import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
-import javax.sound.sampled.ReverbType;
 import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 /*
  * Name: Justin Roderman
@@ -38,15 +24,13 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class Main
 {
 	// For morse code speaker
-	final static int DOT_LENGTH = 100; // .1 second
+	final static int DOT_LENGTH = 50; // .1 second
 	final static int DASH_LENGTH = 3 * DOT_LENGTH; // .3 seconds
 	final static int SPACE_BETWEEN_ELEM = DOT_LENGTH; // .1 second
 	final static int SPACE_BETWEEN_LETTERS = 3 * DOT_LENGTH; // .3 seconds
 	final static int SPACE_BETWEEN_WORDS = 7 * DOT_LENGTH; // .7 seconds
 	
 	public static  HashMap<Character, String> morseDictionary; // Morse Code Dictionary
-
-	public static Synthesizer synth;
 	
 	private static Tone[] tones;
 	
@@ -58,8 +42,6 @@ public class Main
 		String morse = convertToMorse(in);
 		System.out.println(morse);
 		playMorse(morse);
-
-//        synth.close(); // Close the synthesizer
 	}
 	
 	// Populates the morseDictionary and sets up synthesizer
@@ -85,16 +67,6 @@ public class Main
 			System.out.println("Error: Dictionary not found. Exiting Program...");
 			System.exit(0);
 		}
-		
-		/*
-		// Set up synthesizer
-		try
-		{
-			synth = MidiSystem.getSynthesizer();
-		    synth.open();
-		}
-		catch (MidiUnavailableException e) { e.printStackTrace(); }
-		*/
 		
 		System.out.println("Creating tones");
 		tones = new Tone[2];
@@ -188,69 +160,5 @@ public class Main
         catch (InterruptedException e) { e.printStackTrace(); }
     	
         line.drain(); // Drain the line
-		
-		
-		
-		
-		
-		/*
-		try
-		{
-//			synth.open();
-			MidiChannel[] mc = synth.getChannels(); // Creates the synthesizer
-	        mc[0].programChange(6); // Sets the instrument
-	        
-	        // Plays the note
-	        mc[0].noteOn(90, 150);
-	        Thread.sleep(noteLength);
-	        mc[0].noteOff(90, 600);
-//	        synth.close(); // Close the synthesizer
-		}
-		catch (InterruptedException e) { e.printStackTrace(); }
-//		catch (MidiUnavailableException e) { e.printStackTrace(); }
-		*/
-		
-		
-		
-		
-		
-		/*
-		Mixer.Info[] mixInfos = AudioSystem.getMixerInfo();
-		
-		Mixer mixer = AudioSystem.getMixer(mixInfos[0]);
-		
-		Clip clip = null;
-		DataLine.Info dataInfo = new DataLine.Info(Clip.class, null);
-		try { clip = (Clip) mixer.getLine(dataInfo); }
-		catch(LineUnavailableException e) { e.printStackTrace(); }
-		
-		try
-		{
-			String path = "file:/C:/Users/jcrod/Desktop/Programming/Java/MorseCodeProgram/"; // Okay okay I know I shouldn't hard code this but I'm out of time
-			if(shortLength)
-				path += "BeepShort.wav";
-			else
-				path += "BeepLong.wav";
-			URL soundURL = new URL(path);
-			AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundURL);
-			clip.open(audioStream);
-		}
-		catch(LineUnavailableException lue) { lue.printStackTrace(); }
-		catch(UnsupportedAudioFileException uafe) { uafe.printStackTrace(); }
-		catch(IOException ioe) { ioe.printStackTrace(); }
-		catch(Exception e)
-		{
-			System.out.println("Error: Beep.wav not found\nExiting Program...");
-			System.exit(0);
-		}
-		
-		clip.start();
-		
-		do
-		{
-			try { Thread.sleep(50); }
-			catch(InterruptedException ie) { ie.printStackTrace(); }
-		} while(clip.isActive());
-		*/
 	}
 }
