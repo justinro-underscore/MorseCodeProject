@@ -8,7 +8,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
-/*
+/**
  * Name: Justin Roderman
  * File: Main.java
  * Date: October 29, 2017
@@ -21,7 +21,7 @@ import javax.sound.sampled.SourceDataLine;
  * 		- Don't hard code EVERYTHING
  */
 
-public class Main
+public class MorseCodeRunner
 {
 	// For morse code speaker
 	final static int DOT_LENGTH = 50; // .1 second
@@ -29,26 +29,27 @@ public class Main
 	final static int SPACE_BETWEEN_ELEM = DOT_LENGTH; // .1 second
 	final static int SPACE_BETWEEN_LETTERS = 3 * DOT_LENGTH; // .3 seconds
 	final static int SPACE_BETWEEN_WORDS = 7 * DOT_LENGTH; // .7 seconds
-	
+
 	public static  HashMap<Character, String> morseDictionary; // Morse Code Dictionary
-	
+
 	private static Tone[] tones;
-	
-	public static void main(String[] args)
-	{
-		programInitialize(); // Must run first
-		
-		String in = input();
-		String morse = convertToMorse(in);
-		System.out.println(morse);
-		playMorse(morse);
-	}
-	
+
+//	public static void main(String[] args) throws IOException
+//	{
+//		programInitialize(); // Must run first
+//		UIController ui = new UIController();
+//
+//		String in = input();
+//		String morse = convertToMorse(in);
+//		System.out.println(morse);
+//		playMorse(morse);
+//	}
+
 	// Populates the morseDictionary and sets up synthesizer
 	public static void programInitialize()
 	{
 		morseDictionary = new HashMap<Character, String>();
-		
+
 		// Populate the dictionary
 		try
 		{
@@ -67,14 +68,14 @@ public class Main
 			System.out.println("Error: Dictionary not found. Exiting Program...");
 			System.exit(0);
 		}
-		
+
 		System.out.println("Creating tones");
 		tones = new Tone[2];
 		tones[0] = new Tone(DOT_LENGTH);
 		tones[1] = new Tone(DASH_LENGTH);
 		System.out.println("Finished creating tones");
 	}
-	
+
 	// Simple user input
 	public static String input()
 	{
@@ -84,12 +85,12 @@ public class Main
 		System.out.print("Please input message: ");
 		inputMessage = input.nextLine();
 		input.close();
-		
+
 		inputMessage = inputMessage.toLowerCase(); // Makes all characters lowercase
-		
+
 		return inputMessage;
 	}
-	
+
 	// Converts the input to morse code
 	public static String convertToMorse(String input)
 	{
@@ -102,7 +103,7 @@ public class Main
 		}
 		return result;
 	}
-	
+
 	// Converts the morse code to sound
 	public static void playMorse(String input)
 	{
@@ -115,7 +116,7 @@ public class Main
 		}
 		catch (LineUnavailableException e) { e.printStackTrace(); }
         line.start(); // Start the line
-		
+
 		Scanner chopper = new Scanner(input); // Go through the input
 		String letter; // Each morse code letter
 		while(chopper.hasNext())
@@ -145,7 +146,7 @@ public class Main
 		}
 		chopper.close();
 	}
-	
+
 	// Plays a note
 	// Code influenced by https://stackoverflow.com/questions/2064066/does-java-have-built-in-libraries-for-audio-synthesis/2065693#2065693
 	public static void playSound(boolean shortLength, SourceDataLine line)
@@ -158,7 +159,7 @@ public class Main
     	line.write(t.data(), 0, Tone.SAMPLE_RATE * t.getLength() / 1000); // Writes the data
         try { Thread.sleep(t.getLength()); } // Sleep for the length of the tone
         catch (InterruptedException e) { e.printStackTrace(); }
-    	
+
         line.drain(); // Drain the line
 	}
 }
