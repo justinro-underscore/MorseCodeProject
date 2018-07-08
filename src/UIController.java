@@ -25,11 +25,18 @@ public class UIController extends Application
 {
 	@FXML GridPane mainPane;
 	@FXML AnchorPane loadingPane;
-	@FXML Button btnTransmit;
-	@FXML TextArea txtOutput;
 	Image redStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/redStatusImage.png"));
 	Image greenStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/greenStatusImage.png"));
+
+	// Transmit Panel
+	@FXML Button btnTransmit;
+	@FXML TextArea txtOutput;
 	@FXML ImageView imgTransmitStatus;
+
+	// Receive Panel
+	@FXML Button btnReceive;
+	@FXML TextArea txtInput; // TODO May remove later
+	@FXML ImageView imgReceiveStatus;
 
 	/**
 	 * Where the application launches from
@@ -70,6 +77,7 @@ public class UIController extends Application
 		mainPane.setDisable(true);
 		mainPane.setOpacity(0.5);
 		imgTransmitStatus.setImage(redStatusImage);
+		imgReceiveStatus.setImage(redStatusImage);
 		initializeListeners();
 	}
 
@@ -82,6 +90,12 @@ public class UIController extends Application
 		btnTransmit.setOnAction(e ->
 		{
 			transmitFunction();
+		});
+
+		// btnReceive begins receiving on specified frequency
+		btnReceive.setOnAction(e ->
+		{
+			receiveFunction();
 		});
 	}
 
@@ -96,6 +110,7 @@ public class UIController extends Application
 		imgTransmitStatus.setImage(greenStatusImage);
 		txtOutput.setEditable(false);
 		btnTransmit.setDisable(true);
+		btnReceive.setDisable(true);
 		String outputData = MorseCodeRunner.convertToMorse(outputStr);
 		// Put on separate thread
 		Task<Void> morseOutput = new Task<Void>()
@@ -107,11 +122,39 @@ public class UIController extends Application
 				// Run after playing morse code
 				txtOutput.setEditable(true);
 				btnTransmit.setDisable(false);
+				btnReceive.setDisable(false);
 				imgTransmitStatus.setImage(redStatusImage);
 				return null;
 			}
 		};
 		new Thread(morseOutput).start();
+	}
+
+	/**
+	 * Outputs whatever message is received from the given frequency
+	 */
+	private void receiveFunction()
+	{
+		txtInput.clear();
+		imgReceiveStatus.setImage(greenStatusImage);
+		btnReceive.setDisable(true);
+		btnTransmit.setDisable(true);
+		// Put on separate thread
+		Task<Void> morseInput = new Task<Void>()
+		{
+			@Override public Void call()
+			{
+				// TODO Receive message
+
+				// Run after finished receiving morse code
+				btnReceive.setDisable(false);
+				btnTransmit.setDisable(false);
+				imgReceiveStatus.setImage(redStatusImage);
+				return null;
+			}
+		};
+		new Thread(morseInput).start();
+
 	}
 
 	/**
