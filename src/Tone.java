@@ -8,7 +8,7 @@
 public class Tone
 {
 	public static final int SAMPLE_RATE = 64 * 1024; // ~64KHz
-	public static final double TONE_FREQUENCY = 20000;
+	public static final double TONE_FREQUENCY = 440;
 	public static final double PERIOD = SAMPLE_RATE / TONE_FREQUENCY;
 
 	private int length;

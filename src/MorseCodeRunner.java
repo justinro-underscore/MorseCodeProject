@@ -34,18 +34,9 @@ public class MorseCodeRunner
 
 	private static Tone[] tones;
 
-//	public static void main(String[] args) throws IOException
-//	{
-//		programInitialize(); // Must run first
-//		UIController ui = new UIController();
-//
-//		String in = input();
-//		String morse = convertToMorse(in);
-//		System.out.println(morse);
-//		playMorse(morse);
-//	}
-
-	// Populates the morseDictionary and sets up synthesizer
+	/**
+	 * Populates the morseDictionary and sets up synthesizer
+	 */
 	public static void programInitialize()
 	{
 		morseDictionary = new HashMap<Character, String>();
@@ -76,22 +67,11 @@ public class MorseCodeRunner
 		System.out.println("Finished creating tones");
 	}
 
-	// Simple user input
-	public static String input()
-	{
-		// Receive input
-		String inputMessage = "";
-		Scanner input = new Scanner(System.in);
-		System.out.print("Please input message: ");
-		inputMessage = input.nextLine();
-		input.close();
-
-		inputMessage = inputMessage.toLowerCase(); // Makes all characters lowercase
-
-		return inputMessage;
-	}
-
-	// Converts the input to morse code
+	/**
+	 * Converts the input to morse code
+	 * @param input Input to change to morse code
+	 * @return The converted string
+	 */
 	public static String convertToMorse(String input)
 	{
 		String result = "";
@@ -104,9 +84,13 @@ public class MorseCodeRunner
 		return result;
 	}
 
-	// Converts the morse code to sound
+	/**
+	 * Converts the morse code to sound
+	 * @param input Input to be converted to sound
+	 */
 	public static void playMorse(String input)
 	{
+		System.out.println("Outputting: \"" + input + "\"");
 		final AudioFormat af = new AudioFormat(Tone.SAMPLE_RATE, 8, 1, true, true); // AudioFormat
         SourceDataLine line = null; // Create the Data Line
 		try
@@ -147,9 +131,13 @@ public class MorseCodeRunner
 		chopper.close();
 	}
 
-	// Plays a note
-	// Code influenced by https://stackoverflow.com/questions/2064066/does-java-have-built-in-libraries-for-audio-synthesis/2065693#2065693
-	public static void playSound(boolean shortLength, SourceDataLine line)
+	/**
+	 * Plays a single note
+	 * Code influenced by https://stackoverflow.com/questions/2064066/does-java-have-built-in-libraries-for-audio-synthesis/2065693#2065693
+	 * @param shortLength Whether or not the input is long or short
+	 * @param line The audio output
+	 */
+	private static void playSound(boolean shortLength, SourceDataLine line)
 	{
     	Tone t; // Tone to be played (short or long)
     	if(shortLength)
