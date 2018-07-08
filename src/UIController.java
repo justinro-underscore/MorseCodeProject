@@ -6,9 +6,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
@@ -24,7 +25,11 @@ public class UIController extends Application
 {
 	@FXML GridPane mainPane;
 	@FXML AnchorPane loadingPane;
-	@FXML Button btnTest;
+	@FXML Button btnTransmit;
+	@FXML TextArea txtOutput;
+	Image redStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/redStatusImage.png"));
+	Image greenStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/greenStatusImage.png"));
+	@FXML ImageView imgTransmitStatus;
 
 	/**
 	 * Where the application launches from
@@ -51,24 +56,67 @@ public class UIController extends Application
 		Stage stage = new Stage();
 		stage.setTitle("Morse Code Project");
 		stage.setScene(scene);
+		initializeUI();
 
-		initializeListeners(stage);
-		mainPane.setDisable(true);
-		mainPane.setOpacity(0.5);
 		stage.show();
 		startRunning();
 	}
 
 	/**
+	 * Initializes all aspects of the UI
+	 */
+	private void initializeUI()
+	{
+		mainPane.setDisable(true);
+		mainPane.setOpacity(0.5);
+		imgTransmitStatus.setImage(redStatusImage);
+		initializeListeners();
+	}
+
+	/**
 	 * Sets the functions that run when the user clicks on certain objects
 	 */
-	private void initializeListeners(Stage stage)
+	private void initializeListeners()
 	{
-		btnTest.setOnAction(e -> {
-			System.out.println("Pressed");
+		// btnTransmit begins transmitting written message
+		btnTransmit.setOnAction(e ->
+		{
+			transmitFunction();
 		});
 	}
 
+	/**
+	 * Outputs whatever message is written in the output field
+	 */
+	private void transmitFunction()
+	{
+		String outputStr = txtOutput.getText().replace('\n', ' ').toLowerCase();
+		if(outputStr.isEmpty())
+			return;
+		imgTransmitStatus.setImage(greenStatusImage);
+		txtOutput.setEditable(false);
+		btnTransmit.setDisable(true);
+		String outputData = MorseCodeRunner.convertToMorse(outputStr);
+		// Put on separate thread
+		Task<Void> morseOutput = new Task<Void>()
+		{
+			@Override public Void call()
+			{
+				MorseCodeRunner.playMorse(outputData);
+
+				// Run after playing morse code
+				txtOutput.setEditable(true);
+				btnTransmit.setDisable(false);
+				imgTransmitStatus.setImage(redStatusImage);
+				return null;
+			}
+		};
+		new Thread(morseOutput).start();
+	}
+
+	/**
+	 * Initializes the MorseCodeRunner
+	 */
 	private void startRunning()
 	{
 		Task<Void> init = new Task<Void>()
@@ -76,6 +124,8 @@ public class UIController extends Application
 			@Override public Void call()
 			{
 				MorseCodeRunner.programInitialize();
+
+				// Run after program is initialized
 				loadingPane.setDisable(true);
 				loadingPane.setVisible(false);
 				mainPane.setDisable(false);
@@ -83,24 +133,6 @@ public class UIController extends Application
 				return null;
 			}
 		};
-		Thread initThread = new Thread(init);
-		initThread.start();
-	}
-
-	/**
-	 * http://code.makery.ch/blog/javafx-dialogs-official/
-	 * @param title String representing title of dialog box
-	 * @param header String representing head of dialog box
-	 * @param content Content of dialog box
-	 * @param type Type of dialog box
-	 */
-	public void showDialogBox(String title, String header, String content, AlertType type)
-	{
-		Alert alert = new Alert(type);
-		alert.setTitle(title);
-		alert.setHeaderText(header);
-		alert.setContentText(content);
-
-		alert.showAndWait();
+		new Thread(init).start();
 	}
 }
