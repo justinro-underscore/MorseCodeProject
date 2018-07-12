@@ -72,7 +72,7 @@ public class MorseCodeRunner
 	 * @param input Input to change to morse code
 	 * @return The converted string
 	 */
-	public static String convertToMorse(String input)
+	public static String convertToMorse(String input) throws NullPointerException
 	{
 		String result = "";
 		for(int i = 0; i < input.length(); i++)
@@ -90,7 +90,7 @@ public class MorseCodeRunner
 	 */
 	public static void playMorse(String input)
 	{
-		System.out.println("Outputting: \"" + input + "\"");
+		System.out.println("Transmitting: \"" + input + "\"");
 		final AudioFormat af = new AudioFormat(Tone.SAMPLE_RATE, 8, 1, true, true); // AudioFormat
         SourceDataLine line = null; // Create the Data Line
 		try
@@ -129,6 +129,7 @@ public class MorseCodeRunner
 			catch (InterruptedException e) { e.printStackTrace(); }
 		}
 		chopper.close();
+		System.out.println("Finished transmitting");
 	}
 
 	/**

@@ -7,7 +7,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
@@ -28,15 +31,29 @@ public class UIController extends Application
 	Image redStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/redStatusImage.png"));
 	Image greenStatusImage = new Image(getClass().getResource("").toString().replace("/bin/", "/res/greenStatusImage.png"));
 
+	// Frequency Control Panel
+	@FXML Slider sldrTxFreq;
+	@FXML TextField txtTxFreq;
+	@FXML Slider sldrRxFreq;
+	@FXML TextField txtRxFreq;
+	@FXML ToggleButton btnTxRxFreqBind;
+
 	// Transmit Panel
 	@FXML Button btnTransmit;
 	@FXML TextArea txtOutput;
 	@FXML ImageView imgTransmitStatus;
 
 	// Receive Panel
-	@FXML Button btnReceive;
-	@FXML TextArea txtInput; // TODO May remove later
+	@FXML Button btnReceive; // TODO May remove later
+	@FXML TextArea txtInput;
 	@FXML ImageView imgReceiveStatus;
+
+	final int MIN_FREQUENCY = 60;
+	final int MAX_FREQUENCY = 20000;
+	int transmitFrequency = MIN_FREQUENCY;
+	int receiveFrequency = MIN_FREQUENCY;
+	boolean binded = false;
+	boolean lastFreqReceive = false; // This determines which slider moves when binding is turned on
 
 	/**
 	 * Where the application launches from
@@ -76,6 +93,9 @@ public class UIController extends Application
 	{
 		mainPane.setDisable(true);
 		mainPane.setOpacity(0.5);
+
+		txtTxFreq.setText("" + MIN_FREQUENCY);
+		txtRxFreq.setText("" + MIN_FREQUENCY);
 		imgTransmitStatus.setImage(redStatusImage);
 		imgReceiveStatus.setImage(redStatusImage);
 		initializeListeners();
@@ -86,6 +106,8 @@ public class UIController extends Application
 	 */
 	private void initializeListeners()
 	{
+		/* BUTTON LISTENERS */
+
 		// btnTransmit begins transmitting written message
 		btnTransmit.setOnAction(e ->
 		{
@@ -97,6 +119,124 @@ public class UIController extends Application
 		{
 			receiveFunction();
 		});
+
+		// btnTxRxBind binds the transmit and receive frequencies:
+		//   When one moves, so does the other
+		btnTxRxFreqBind.setOnAction(e ->
+		{
+			binded = btnTxRxFreqBind.isSelected();
+			if(binded)
+			{
+				if(lastFreqReceive)
+					sldrTxFreq.setValue(sldrRxFreq.getValue());
+				else
+					sldrRxFreq.setValue(sldrTxFreq.getValue());
+			}
+		});
+
+		/* SLIDER LISTENERS */
+
+		sldrTxFreq.valueProperty().addListener((observable, oldVal, newVal) ->
+		{
+			lastFreqReceive = false;
+			handleSliderFreqInput((int) frequencyEquation((double) newVal, false), txtTxFreq);
+			if(binded)
+				sldrRxFreq.setValue((double) newVal);
+		});
+		sldrRxFreq.valueProperty().addListener((observable, oldVal, newVal) ->
+		{
+			lastFreqReceive = true;
+			handleSliderFreqInput((int) frequencyEquation((double) newVal, false), txtRxFreq);
+			if(binded)
+				sldrTxFreq.setValue((double) newVal);
+		});
+
+		/* TEXT FIELD LISTENERS */
+
+		txtTxFreq.textProperty().addListener((observable, oldVal, newVal) ->
+		{
+			if(!newVal.matches("\\d+")) // Only allow numbers
+				txtTxFreq.setText(newVal.replaceAll("[^\\d]", ""));
+		});
+		txtRxFreq.textProperty().addListener((observable, oldVal, newVal) ->
+		{
+			if(!newVal.matches("\\d+"))
+				txtRxFreq.setText(newVal.replaceAll("[^\\d]", ""));
+		});
+		txtTxFreq.focusedProperty().addListener((observable, oldVal, newVal) ->
+		{
+			lastFreqReceive = false;
+			if(!newVal)
+				handleTextFreqInput(txtTxFreq.getText(), sldrTxFreq);
+		});
+		txtRxFreq.focusedProperty().addListener((observable, oldVal, newVal) ->
+		{
+			lastFreqReceive = true;
+			if(!newVal)
+				handleTextFreqInput(txtRxFreq.getText(), sldrRxFreq);
+		});
+	}
+
+	private Number frequencyEquation(double input, boolean inverse)
+	{
+		double MAGIC_NUM1 = 1.2615810293952;
+		double MAGIC_NUM2 = 60;
+		Number result;
+		if(inverse)
+		{
+			result = (double) (Math.log(input / MAGIC_NUM2) / Math.log(MAGIC_NUM1));
+		}
+		else
+		{
+			result = (int) (Math.round(Math.pow(MAGIC_NUM1, input)) * MAGIC_NUM2);
+		}
+		return result;
+	}
+
+	private void handleSliderFreqInput(int newFreq, TextField txtField)
+	{
+		if(txtField.getText().equals("" + newFreq))
+			return;
+
+		if(txtField.equals(txtTxFreq))
+		{
+			transmitFrequency = newFreq;
+			txtTxFreq.setText("" + newFreq);
+		}
+		else
+		{
+			receiveFrequency = newFreq;
+			txtRxFreq.setText("" + newFreq);
+		}
+	}
+
+	private void handleTextFreqInput(String newFreqStr, Slider sldr)
+	{
+		if(("" + (int) frequencyEquation((double) sldr.getValue(), false)).equals(newFreqStr))
+			return;
+
+		if(newFreqStr.isEmpty())
+			newFreqStr = "" + MIN_FREQUENCY; // So that we don't get NumberFormatException
+		int newFreq = Integer.parseInt(newFreqStr);
+
+		// Bounds check
+		if(newFreq < MIN_FREQUENCY)
+			newFreq = MIN_FREQUENCY;
+		else if(newFreq > MAX_FREQUENCY)
+			newFreq = MAX_FREQUENCY;
+
+		double sldrValue = (double) frequencyEquation(newFreq, true);
+		if(sldr.equals(sldrTxFreq))
+		{
+			transmitFrequency = newFreq;
+			txtTxFreq.setText("" + newFreq);
+		}
+		else
+		{
+			receiveFrequency = newFreq;
+			txtRxFreq.setText("" + newFreq);
+		}
+		sldr.setValue(sldrValue);
 	}
 
 	/**
@@ -111,23 +251,32 @@ public class UIController extends Application
 		txtOutput.setEditable(false);
 		btnTransmit.setDisable(true);
 		btnReceive.setDisable(true);
-		String outputData = MorseCodeRunner.convertToMorse(outputStr);
-		// Put on separate thread
-		Task<Void> morseOutput = new Task<Void>()
-		{
-			@Override public Void call()
+		try {
+			String outputData = MorseCodeRunner.convertToMorse(outputStr);
+			// Put on separate thread
+			Task<Void> morseOutput = new Task<Void>()
 			{
-				MorseCodeRunner.playMorse(outputData);
+				@Override public Void call()
+				{
+					MorseCodeRunner.playMorse(outputData);
 
-				// Run after playing morse code
-				txtOutput.setEditable(true);
-				btnTransmit.setDisable(false);
-				btnReceive.setDisable(false);
-				imgTransmitStatus.setImage(redStatusImage);
-				return null;
-			}
-		};
-		new Thread(morseOutput).start();
+					// Run after playing morse code
+					txtOutput.setEditable(true);
+					btnTransmit.setDisable(false);
+					btnReceive.setDisable(false);
+					imgTransmitStatus.setImage(redStatusImage);
+					return null;
+				}
+			};
+			new Thread(morseOutput).start();
+		}
+		catch(NullPointerException e)
+		{
+			System.out.println("\n!!! WARNING: PROGRAM NEVER INITIALIZED. ABORTING !!!");
+			txtOutput.setText("\n!!! WARNING: !!!\nPROGRAM NEVER INITIALIZED\nABORTING\n!!! WARNING !!!");
+			txtInput.setText("\n!!! WARNING: !!!\nPROGRAM NEVER INITIALIZED\nABORTING\n!!! WARNING !!!");
+			imgTransmitStatus.setImage(redStatusImage);
+		}
 	}
 
 	/**
@@ -166,7 +315,7 @@ public class UIController extends Application
 		{
 			@Override public Void call()
 			{
-				MorseCodeRunner.programInitialize();
+//				MorseCodeRunner.programInitialize();
 
 				// Run after program is initialized
 				loadingPane.setDisable(true);
